@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Gmail Inbox Cleaner
-Scant je inbox via de lokale mbox (snel), verwijdert berichten echt in Gmail via de API.
+Scans your inbox and deletes emails by sender directly via the Gmail API.
 """
 
 import json
@@ -224,7 +224,7 @@ def delete_senders_gmail(emails_to_delete):
 
 # ── HTML ─────────────────────────────────────────────────────────────────────
 HTML = r"""<!DOCTYPE html>
-<html lang="nl">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <title>Gmail Inbox Cleaner</title>
@@ -285,32 +285,32 @@ td{padding:9px 14px;font-size:13px;vertical-align:middle}
 <body>
 <header>
   <h1>&#x2709;&#xFE0F; Gmail Inbox Cleaner</h1>
-  <span id="stats">Klik op "Inbox laden" om te beginnen</span>
+  <span id="stats">Click "Load inbox" to get started</span>
 </header>
 <div class="container">
   <div class="toolbar">
-    <input id="q" type="text" placeholder="Zoek op naam of e-mailadres..." oninput="filter()">
-    <button class="btn-scan" id="btn-scan" onclick="startScan()">Inbox laden</button>
+    <input id="q" type="text" placeholder="Search by name or email address..." oninput="filter()">
+    <button class="btn-scan" id="btn-scan" onclick="startScan()">Load inbox</button>
     <button class="btn-apply" id="btn-apply" onclick="askConfirm()" disabled>
-      Verplaats naar prullenbak<span class="badge" id="badge" style="display:none">0</span>
+      Move to trash<span class="badge" id="badge" style="display:none">0</span>
     </button>
   </div>
   <div class="pbar-wrap" id="pw">
-    <div class="pbar-label" id="plabel">Bezig...</div>
+    <div class="pbar-label" id="plabel">Loading...</div>
     <div class="pbar"><div class="pbar-fill" id="pfill" style="width:0%"></div></div>
   </div>
   <div class="card" id="card">
-    <div class="empty">Klik op <strong>Inbox laden</strong> om te beginnen.<br>De eerste keer duurt dit een paar minuten (12 GB inbox).</div>
+    <div class="empty">Click <strong>Load inbox</strong> to get started.<br>The first scan may take a few minutes.</div>
   </div>
 </div>
 
 <div class="overlay" id="modal">
   <div class="modal">
-    <h2>Bevestig verwijdering</h2>
+    <h2>Confirm deletion</h2>
     <p id="mtext"></p>
     <div class="modal-acts">
-      <button class="btn-cancel" onclick="closeModal()">Annuleer</button>
-      <button class="btn-confirm" onclick="doDelete()">Verplaats naar prullenbak</button>
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-confirm" onclick="doDelete()">Move to trash</button>
     </div>
   </div>
 </div>
@@ -323,8 +323,8 @@ function hideP(){document.getElementById('pw').classList.remove('vis');}
 
 function startScan(){
   document.getElementById('btn-scan').disabled=true;
-  document.getElementById('btn-scan').textContent='Bezig...';
-  setP(0,'Voorbereiding...');
+  document.getElementById('btn-scan').textContent='Loading...';
+  setP(0,'Preparing...');
   fetch('/api/scan',{method:'POST'}).then(r=>r.json()).then(d=>{
     if(d.status==='cached'){loadSenders();}else{pollScan();}
   });
@@ -332,9 +332,9 @@ function startScan(){
 
 function pollScan(){
   fetch('/api/scan/progress').then(r=>r.json()).then(d=>{
-    setP(d.percent,`Scannen... ${d.percent}% — ${d.total.toLocaleString('nl-NL')} berichten`);
+    setP(d.percent,`Scanning... ${d.percent}% — ${d.total.toLocaleString()} messages`);
     if(d.done){loadSenders();}
-    else if(d.error){setP(100,'Fout: '+d.error);resetScanBtn();}
+    else if(d.error){setP(100,'Error: '+d.error);resetScanBtn();}
     else setTimeout(pollScan,800);
   });
 }
@@ -343,18 +343,18 @@ function loadSenders(){
   fetch('/api/senders').then(r=>r.json()).then(d=>{
     all=d.senders; maxC=all.length?all[0].count:1;
     render(all);
-    document.getElementById('stats').textContent=`${d.total.toLocaleString('nl-NL')} e-mails · ${d.sender_count.toLocaleString('nl-NL')} afzenders`;
+    document.getElementById('stats').textContent=`${d.total.toLocaleString()} emails · ${d.sender_count.toLocaleString()} senders`;
     hideP(); resetScanBtn();
   });
 }
 
 function resetScanBtn(){
   document.getElementById('btn-scan').disabled=false;
-  document.getElementById('btn-scan').textContent='Opnieuw laden';
+  document.getElementById('btn-scan').textContent='Reload';
 }
 
 function render(list){
-  if(!list.length){document.getElementById('card').innerHTML='<div class="empty">Geen resultaten.</div>';return;}
+  if(!list.length){document.getElementById('card').innerHTML='<div class="empty">No results.</div>';return;}
   const rows=list.map(s=>{
     const w=Math.max(4,Math.round((s.count/maxC)*180));
     const isDel=pending.has(s.email);
@@ -362,19 +362,19 @@ function render(list){
     const url=hasUrl?s.unsubscribe_urls[0]:'';
     return `<tr class="${isDel?'del':''}">
       <td><div class="sname">${esc(s.name)}</div><div class="semail">${esc(s.email)}</div></td>
-      <td><div class="bar-wrap"><span class="bar-num">${s.count.toLocaleString('nl-NL')}</span>
+      <td><div class="bar-wrap"><span class="bar-num">${s.count.toLocaleString()}</span>
         <div class="bar" style="width:${w}px"><div class="bar-inner" style="width:100%"></div></div></div></td>
       <td><div class="acts">
-        <button class="btn-unsub" ${hasUrl?`onclick="openUrl('${esc(url)}')"`:' disabled'} title="${hasUrl?esc(url):'Geen unsubscribe link'}">
-          ${hasUrl?'Uitschrijven':'Geen link'}</button>
+        <button class="btn-unsub" ${hasUrl?`onclick="openUrl('${esc(url)}')"`:' disabled'} title="${hasUrl?esc(url):'No unsubscribe link found'}">
+          ${hasUrl?'Unsubscribe':'No link'}</button>
         ${isDel
-          ?`<button class="btn-undo" onclick="unmark('${esc(s.email)}')">&#8617; Ongedaan</button>`
-          :`<button class="btn-del" onclick="mark('${esc(s.email)}')">&#128465; Verwijder alles</button>`}
+          ?`<button class="btn-undo" onclick="unmark('${esc(s.email)}')">&#8617; Undo</button>`
+          :`<button class="btn-del" onclick="mark('${esc(s.email)}')">&#128465; Delete all</button>`}
       </div></td>
     </tr>`;
   }).join('');
   document.getElementById('card').innerHTML=`<table>
-    <thead><tr><th>Afzender</th><th>Aantal mails</th><th>Acties</th></tr></thead>
+    <thead><tr><th>Sender</th><th>Emails</th><th>Actions</th></tr></thead>
     <tbody>${rows}</tbody></table>`;
 }
 
@@ -399,8 +399,8 @@ function openUrl(url){
 function askConfirm(){
   const n=pending.size;
   document.getElementById('mtext').innerHTML=
-    `Je staat op het punt alle e-mails van <strong>${n} afzender${n===1?'':'s'}</strong> naar de Gmail-prullenbak te verplaatsen.<br><br>
-    Ze blijven 30 dagen in de prullenbak staan en worden daarna automatisch permanent verwijderd. Je kunt ze daarvoor nog terughalen.`;
+    `You are about to move all emails from <strong>${n} sender${n===1?'':'s'}</strong> to Gmail Trash.<br><br>
+    Emails stay in Trash for 30 days and can be restored. After 30 days they are permanently deleted.`;
   document.getElementById('modal').classList.add('vis');
 }
 function closeModal(){document.getElementById('modal').classList.remove('vis');}
@@ -409,24 +409,24 @@ function doDelete(){
   closeModal();
   document.getElementById('btn-apply').disabled=true;
   document.getElementById('btn-scan').disabled=true;
-  setP(0,'Verbinding maken met Gmail...');
+  setP(0,'Connecting to Gmail...');
   fetch('/api/delete',{method:'POST',headers:{'Content-Type':'application/json'},
     body:JSON.stringify({emails:[...pending]})}).then(r=>r.json()).then(d=>{
-      if(d.error){setP(0,'Fout: '+d.error);document.getElementById('btn-scan').disabled=false;return;}
+      if(d.error){setP(0,'Error: '+d.error);document.getElementById('btn-scan').disabled=false;return;}
       pollDelete();
     });
 }
 
 function pollDelete(){
   fetch('/api/delete/progress').then(r=>r.json()).then(d=>{
-    setP(d.percent,`Verwijderen via Gmail API... ${d.percent}% — ${d.deleted.toLocaleString('nl-NL')} berichten verplaatst`);
+    setP(d.percent,`Deleting via Gmail API... ${d.percent}% — ${d.deleted.toLocaleString()} emails moved`);
     if(d.done){
       pending.clear();badge();
-      setP(100,`Klaar! ${d.deleted.toLocaleString('nl-NL')} berichten naar prullenbak verplaatst.`);
+      setP(100,`Done! ${d.deleted.toLocaleString()} emails moved to trash.`);
       document.getElementById('btn-scan').disabled=false;
       loadSenders();
     }else if(d.error){
-      setP(100,'Fout: '+d.error);
+      setP(100,'Error: '+d.error);
       document.getElementById('btn-scan').disabled=false;
     }else setTimeout(pollDelete,800);
   });
@@ -483,7 +483,7 @@ def api_delete():
     if delete_progress["running"]:
         return jsonify({"status": "already_running"})
     if not os.path.exists(CREDS_PATH):
-        return jsonify({"error": "credentials.json ontbreekt — zie de setup-instructies in de terminal"}), 400
+        return jsonify({"error": "credentials.json not found — see setup instructions in the terminal"}), 400
     emails = request.json.get("emails", [])
     if not emails:
         return jsonify({"status": "no_emails"})
@@ -498,53 +498,49 @@ def api_delete_progress():
 
 # ── Startup ──────────────────────────────────────────────────────────────────
 def check_credentials():
-    """Controleer of credentials.json aanwezig is en voer OAuth-flow uit indien nodig."""
+    """Check if credentials.json exists and run OAuth flow if needed."""
     if not os.path.exists(CREDS_PATH):
         print("\n" + "="*60)
-        print("  SETUP VEREIST: Gmail API-toegang")
+        print("  SETUP REQUIRED: Gmail API access")
         print("="*60)
         print("""
-Stap 1 — Ga naar: https://console.cloud.google.com/
-Stap 2 — Maak een nieuw project (of kies bestaand).
-Stap 3 — Zoek naar 'Gmail API' en klik op 'Inschakelen'.
-Stap 4 — Ga naar 'APIs & Services' → 'Credentials'.
-Stap 5 — Klik '+ Create Credentials' → 'OAuth client ID'.
-          Kies type: 'Desktop app'. Geef het een naam.
-Stap 6 — Klik 'Download JSON' en sla het bestand op als:
+Step 1 - Go to: https://console.cloud.google.com/
+Step 2 - Create a new project (or select existing).
+Step 3 - Search for 'Gmail API' and click 'Enable'.
+Step 4 - Go to 'APIs & Services' -> 'Credentials'.
+Step 5 - Click '+ Create Credentials' -> 'OAuth client ID'.
+         Choose type: 'Desktop app'.
+Step 6 - Click 'Download JSON' and save the file as:
 
-          """ + CREDS_PATH + """
+         """ + CREDS_PATH + """
 
-Stap 7 — Herstart dit script.
+Step 7 - Restart this script.
 
-Tip: bij 'OAuth consent screen' kies 'External' en voeg
-     je eigen Gmail-adres toe als testgebruiker.
+Tip: under 'OAuth consent screen', choose 'External' and add
+     your own Gmail address as a test user.
 """)
-        print("="*60)
-        print("\nHet scannen van de inbox werkt al zonder credentials.")
-        print("Je hebt ze alleen nodig voor het verwijderen via Gmail.\n")
+        print("="*60 + "\n")
         return False
 
-    # Credentials aanwezig → test authenticatie
     try:
-        print("\nGmail-authenticatie controleren...")
+        print("\nChecking Gmail authentication...")
         get_service()
-        print("OK Gmail-verbinding geslaagd!\n")
+        print("OK Gmail connection successful!\n")
         return True
     except Exception as e:
-        print(f"FOUT Gmail-authenticatie mislukt: {e}")
-        print("  Verwijder token.json en probeer opnieuw.\n")
+        print(f"ERROR Gmail authentication failed: {e}")
+        print("  Delete token.json and try again.\n")
         return False
 
 
 if __name__ == "__main__":
     print("\nGmail Inbox Cleaner")
-    print(f"Mbox:  {MBOX_PATH}")
     check_credentials()
 
     def open_browser():
         time.sleep(1.5)
         webbrowser.open("http://localhost:5000")
 
-    print("Webinterface gestart op: http://localhost:5000")
+    print("Web interface running at: http://localhost:5000")
     threading.Thread(target=open_browser, daemon=True).start()
     app.run(debug=False, port=5000, threaded=True)
