@@ -1,0 +1,17 @@
+# Google OAuth - NOOIT uploaden!
+credentials.json
+token.json
+
+# Persoonlijke inbox data
+Inbox.mbox
+inbox_index.json
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.env
+
+# OS
+.DS_Store
+Thumbs.db
