@@ -14,17 +14,13 @@ An interactive web tool to bulk-unsubscribe and delete emails by sender directly
 
 ## How it works
 
-1. Scans your local `Inbox.mbox` (exported via Google Takeout) to build a sender index
-2. Connects to Gmail API to move selected emails to Trash
+1. Connects to the Gmail API and scans your inbox to build a sender index
+2. Lets you move all emails from selected senders to Gmail Trash in one click
 3. Emails in Trash are automatically deleted after 30 days (or you can empty it manually)
 
 ## Setup
 
-### 1. Export your Gmail inbox
-
-Go to [Google Takeout](https://takeout.google.com), select **Mail**, and download your export. Place `Inbox.mbox` in the same folder as `inbox_cleaner.py`.
-
-### 2. Install dependencies
+### 1. Install dependencies
 
 ```bash
 pip install -r requirements.txt
