@@ -4,6 +4,9 @@ An interactive web tool to bulk-unsubscribe and delete emails by sender directly
 
 ![Python](https://img.shields.io/badge/python-3.8+-blue) ![Flask](https://img.shields.io/badge/flask-latest-green) ![License](https://img.shields.io/badge/license-MIT-brightgreen)
 
+<img width="1600" height="779" alt="image" src="https://github.com/user-attachments/assets/9ccddc9f-7612-48a9-9187-2649c80c7db0" />
+
+
 ## Features
 
 - **Sorted sender list** — see who fills your inbox the most
